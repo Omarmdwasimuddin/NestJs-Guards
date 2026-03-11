@@ -59,6 +59,8 @@ export class ProductService {
 }
 ```
 
+##### Note: product path e AuthGuard setup
+
 ```bash
 # product.controller.ts
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
@@ -82,4 +84,8 @@ export class ProductController {
 }
 ```
 
+##### Note: Headers e token na dile path access kora jabe na
 ![](/public/Img/img.png)
+
+##### Note: Headers e token dila path access kora jabe
+![](/public/Img/img1.png)
