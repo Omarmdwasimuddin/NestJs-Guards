@@ -89,3 +89,106 @@ export class ProductController {
 
 ##### Note: Headers e token dila path access kora jabe
 ![](/public/Img/img1.png)
+
+
+## Role-based Authorization
+
+```bash
+# create guard
+$ nest g guard guards/roles
+```
+
+![](/public/Img/img2.png)
+
+##### Note: add file- roles.decorator.ts & roles.enums.ts
+
+![roles file](/public/Img/img3.png)
+
+
+```bash
+# roles.decorator.ts
+// Custom decorator
+import { SetMetadata } from "@nestjs/common";
+
+export const ROLES_KEY = 'roles';
+export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+```
+
+```bash
+# roles.enums.ts
+export enum Role{
+    User = 'user',
+    Admin = 'admin'
+}
+```
+
+```bash
+# roles.guard.ts
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { Reflector } from '@nestjs/core';
+import { Role } from './roles.enums';
+import { ROLES_KEY } from './roles.decorator';
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+
+  constructor(private reflector: Reflector){}
+
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(
+      ROLES_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]
+    );
+
+    if(!requiredRoles) return true;
+    const request = context.switchToHttp().getRequest<{ headers: Record<string, string> }>();
+    const userRole = request.headers['x-user-role'] as Role;
+    
+    return requiredRoles.includes(userRole);
+  }
+}
+```
+
+```bash
+# create controller
+$ nest g controller user-roles
+```
+
+```bash
+# user-roles.controller.ts
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Roles } from 'src/guards/roles/roles.decorator';
+import { Role } from 'src/guards/roles/roles.enums';
+import { RolesGuard } from 'src/guards/roles/roles.guard';
+
+@Controller('user-roles')
+export class UserRolesController {
+
+    @Get('admin-data')
+    @UseGuards(RolesGuard)
+    @Roles(Role.Admin)
+    getAdminData(){
+        return { message: "Only Admins can access this data"};
+    }
+
+    @Get('user-data')
+    getUserData(){
+        return { message: 'Any authenticated user can access this data' };
+    }
+
+}
+```
+
+![](/public/Img/cannotaccessanyone.png)
+
+##### Note: headers e x-user-role dite hobe & value dite hobe ekhane value hishabe admin ache
+![](/public/Img/admincanaccess.png)
+
+##### Note: jekono user ei access korte parbe
+![](/public/Img/anyonecanaccess.png)
