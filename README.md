@@ -192,3 +192,175 @@ export class UserRolesController {
 
 ##### Note: jekono user ei access korte parbe
 ![](/public/Img/anyonecanaccess.png)
+
+NestJS এ Guard হলো এমন একটি component যেটা request কে controller এ যাওয়ার আগে check করে।
+
+অর্থাৎ, কোনো user request করার permission আছে কি না তা Guard দিয়ে নির্ধারণ করা হয়।
+
+---
+
+#### NestJS Guard কি?
+
+সহজভাবে বললে:
+
+👉 Guard = Authorization Check
+
+যখন client request পাঠায় তখন flow সাধারণত এমন হয়:
+
+```
+Client Request
+      ↓
+Middleware
+      ↓
+Guard
+      ↓
+Interceptor
+      ↓
+Controller
+      ↓
+Service
+```
+
+Guard এর কাজ হলো:
+
+- User login করা আছে কি না
+- User এর role আছে কি না
+- User এর permission আছে কি না
+
+এসব check করা।
+
+---
+
+#### একটি Guard এর সহজ উদাহরণ
+
+```ts
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+
+  canActivate(context: ExecutionContext): boolean {
+
+    const request = context.switchToHttp().getRequest();
+
+    if(request.headers.authorization){
+      return true;
+    }
+
+    return false;
+  }
+}
+```
+
+এখানে কি হচ্ছে:
+
+1️⃣ request আসলো
+2️⃣ header এ token আছে কিনা check করা হলো
+3️⃣ থাকলে true → controller এ যাবে
+4️⃣ না থাকলে false → request block
+
+---
+
+#### Guard কোথায় ব্যবহার করা হয়
+
+Controller বা route এ।
+
+```ts
+@UseGuards(AuthGuard)
+@Get('profile')
+getProfile(){
+  return "User Profile";
+}
+```
+
+মানে:
+
+👉 user যদি guard pass করে তাহলে profile দেখতে পারবে।
+
+---
+
+#### Middleware আর Guard কি একই?
+
+না, **Middleware এবং Guard আলাদা**।
+
+| বিষয়                     | Middleware         | Guard             |
+| ------------------------ | ------------------ | ----------------- |
+| কাজ                      | Request modify করা | Permission check  |
+| কোথায় চলে                | Request এর শুরুতে  | Controller এর আগে |
+| Authorization            | সাধারণত না         | হ্যাঁ             |
+| Access to route metadata | না                 | হ্যাঁ             |
+
+---
+
+#### Middleware কি করে
+
+Middleware সাধারণত:
+
+- logging
+- request modify
+- headers add
+- body parsing
+
+Example:
+
+```ts
+export function logger(req, res, next){
+  console.log("Request Received");
+  next();
+}
+```
+
+---
+
+#### Guard কি করে
+
+Guard সাধারণত:
+
+- Authentication
+- Authorization
+- Role checking
+- Permission control
+
+Example:
+
+Admin route
+User route
+SuperAdmin route
+
+এগুলো Guard দিয়ে control করা হয়।
+
+---
+
+#### বাস্তব উদাহরণ
+
+ধরো:
+
+/products → সবাই দেখতে পারবে
+/admin/products → শুধু admin
+
+তখন Guard ব্যবহার করা হয়।
+
+@Roles('admin')
+@UseGuards(RolesGuard)
+
+---
+
+#### Middleware vs Guard (বাস্তব পার্থক্য)
+
+Middleware:
+
+সব request এ run হয়
+
+Guard:
+
+specific route বা controller এ run হয়
+
+---
+
+#### সহজভাবে মনে রাখার টেকনিক
+
+Middleware = request modify
+
+Guard = request allow / block
+
+---
